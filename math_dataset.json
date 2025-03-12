@@ -17,7 +17,6 @@
   },
   {
     "question": "Solve the differential equation: dy/dx = 3x^2 + 2x - 1 with initial condition y(0) = 2",
-    "solution": "To solve the differential equation dy/dx = 3x^2 + 2x - 1 with the initial condition y(0) = 2, we first find the general solution by integrating both sides with respect to x: ∫(dy/dx) dx = ∫(3x^2 + 2x - 1) dx. This gives us y(x) = x^3 + x^2 - x + C, where C is the constant of integration. Now, we use the initial condition y(0) = 2 to find the value of C. Plugging in x = 0 and y = 2, we get 2 = (0)^3 + (0)^2 - 0 + C, which simplifies to C = 2. Therefore, the particular solution to the differential equation is y(x) = x^3 + x^2 - x + 2. You're making great progress!"
   },
   {
     "question": "Find the limit: lim (x->2) (x^2 - 4) / (x - 2)",
