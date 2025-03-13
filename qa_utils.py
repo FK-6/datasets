@@ -68,46 +68,63 @@ def clean_json_string(text: str) -> str:
     # Remove any markdown code block markers
     text = re.sub(r'```json\s*|\s*```', '', text)
     
-    # Handle LaTeX style math notation
-    text = text.replace('\\\\', '\\')  # Fix double escapes
-    text = text.replace('\n', '\\n')   # Properly escape newlines
+    # First pass: Handle LaTeX expressions
+    def escape_latex(match):
+        latex = match.group(0)
+        # Keep $ signs but escape backslashes properly
+        return latex.replace('\\', '\\\\').replace('"', '\\"')
     
-    # Fix common mathematical symbols
-    math_symbols = {
-        '→': '\\to',
-        '∫': '\\int',
-        '∞': '\\infty',
-        '≤': '\\leq',
-        '≥': '\\geq',
-        'π': '\\pi',
-        '∈': '\\in',
-        '⊆': '\\subseteq',
-        '∑': '\\sum',
-        '∏': '\\prod',
-        '√': '\\sqrt'
-    }
+    # Replace LaTeX expressions while preserving $ signs
+    text = re.sub(r'\$(.*?)\$', escape_latex, text, flags=re.DOTALL)
     
-    for symbol, latex in math_symbols.items():
-        text = text.replace(symbol, latex)
+    # Second pass: Handle special characters outside LaTeX
+    text = text.replace('\n', '\\n')
+    text = text.replace('"', '\\"')
     
-    # Fix any unescaped quotes within mathematical expressions
-    text = re.sub(r'(?<!\\)"', '\\"', text)
+    # Third pass: Fix double escapes and other issues
+    text = re.sub(r'\\\\\\\\', r'\\\\', text)  # Fix quadruple backslashes
+    text = re.sub(r'\\{3,}', r'\\\\', text)    # Fix triple or more backslashes
+    text = re.sub(r'\\([^\\/"bfnrt])', r'\1', text)  # Remove invalid escapes
     
     return text
 
 def fix_json_format(text: str) -> str:
-    """Fix JSON formatting issues."""
-    try:
-        # Try to parse as is first
-        json.loads(text)
-        return text
-    except json.JSONDecodeError:
-        # Clean and try to fix the JSON
-        cleaned = clean_json_string(text)
+    """Fix JSON formatting issues and ensure valid escape characters."""
+    def try_parse_json(attempt: str) -> Union[Dict, None]:
         try:
-            # Verify the cleaned version is valid JSON
-            json.loads(cleaned)
+            return json.loads(attempt)
+        except json.JSONDecodeError:
+            return None
+
+    # First attempt: Try original text
+    if result := try_parse_json(text):
+        return text
+
+    # Second attempt: Basic cleaning
+    cleaned = clean_json_string(text)
+    if result := try_parse_json(cleaned):
+        return cleaned
+
+    # Third attempt: Fix common LaTeX issues
+    try:
+        # Normalize LaTeX escapes
+        cleaned = re.sub(r'\\\\([^\\])', r'\\\1', cleaned)
+        # Fix consecutive backslashes
+        cleaned = re.sub(r'\\{2,}', r'\\\\', cleaned)
+        # Ensure proper quote escaping
+        cleaned = re.sub(r'(?<!\\)"', '\\"', cleaned)
+        
+        if result := try_parse_json(cleaned):
             return cleaned
-        except json.JSONDecodeError as e:
-            print(f"Failed to fix JSON format: {str(e)}")
-            return text
+
+        # Final attempt: More aggressive cleaning
+        cleaned = re.sub(r'\\([^\\/"bfnrt])', r'\1', cleaned)
+        if result := try_parse_json(cleaned):
+            return cleaned
+
+    except Exception as e:
+        print(f"Error during JSON cleaning: {str(e)}")
+
+    # If all attempts fail, return original text
+    print("Failed to fix JSON format")
+    return text

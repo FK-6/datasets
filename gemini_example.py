@@ -83,7 +83,7 @@ IMPORTANT FORMATTING INSTRUCTIONS:
 - Use exactly the format shown in the example above
 - Ensure proper JSON formatting with indentation
 - Do not add any text before or after the JSON
-- use proper json escape characters for special characters like quotes, backslashes, etc.
+- use proper json escape characters fot latex and other areas to escape parse error leverage double escaping 
 """.format(question)
     
     try:
